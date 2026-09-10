@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII Art Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ========== Palette ==========
+      Café Noir:   #4C3D19
+      Kombu Green: #354024
+      Moss Green:  #889063
+      Tan:         #CFBB99
+      Bone:        #E5D7C4
+    ================================ */
+    :root {
+      --cafe:       #4C3D19;
+      --kombu:      #354024;
+      --moss:       #889063;
+      --tan:        #CFBB99;
+      --bone:       #E5D7C4;
+
+      --bg:         #F5F0E8;
+      --bg-card:    #FFFFFF;
+      --bg-input:   #F0EBE2;
+      --border:     #D8D0C2;
+      --border-light:#E8E2D6;
+
+      --text:       #354024;
+      --text-secondary: #889063;
+      --text-muted: #A89E8C;
+
+      --accent:     #354024;
+      --accent-hover:#4C3D19;
+
+      --radius:     4px;
+      --radius-sm:  3px;
+      --font:       'Inter', system-ui, -apple-system, sans-serif;
+      --mono:       'JetBrains Mono', 'Consolas', monospace;
+      --transition: 0.15s ease;
+
+      --grid-color: rgba(53, 64, 36, 0.06);
+      --grid-size:  24px;
+    }
+
+    /* ========== Reset ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      /* Square grid background */
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: var(--grid-size) var(--grid-size);
+      background-position: -1px -1px;
+    }
+
+    /* ========== Header ========== */
+    .header {
+      padding: 24px 40px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--kombu);
+    }
+
+    .header-tag {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .header-right {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .header-link {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+
+    .header-link:hover { color: var(--kombu); }
+
+    /* ========== Main Layout ========== */
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 40px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 32px;
+      min-height: calc(100vh - 73px);
+    }
+
+    /* ========== Left Column ========== */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Section labels */
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--bg-card);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--moss);
+      background: #FAFAF5;
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--kombu);
+      background: rgba(136, 144, 99, 0.05);
+    }
+
+    .upload-icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .upload-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--text-secondary);
+    }
+
+    .upload-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    .upload-text .browse-link {
+      color: var(--kombu);
+      font-weight: 500;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-color: var(--moss);
+    }
+
+    .upload-formats {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 12px;
+      letter-spacing: 0.03em;
+    }
+
+    #fileInput { display: none; }
+
+    /* Preview Card */
+    .preview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: none;
+    }
+
+    .preview-card.visible { display: block; }
+
+    .preview-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .preview-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .preview-info {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-weight: 400;
+    }
+
+    .preview-img-wrap {
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      background: var(--bg-input);
+    }
+
+    .preview-img-wrap img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: var(--radius-sm);
+      object-fit: contain;
+    }
+
+    /* ===== Controls ===== */
+    .controls-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    /* Style selector */
+    .style-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .style-btn {
+      padding: 8px 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-family: var(--font);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+
+    .style-btn:hover {
+      border-color: var(--moss);
+      color: var(--text);
+    }
+
+    .style-btn.active {
+      background: var(--kombu);
+      border-color: var(--kombu);
+      color: #fff;
+    }
+
+    /* Sliders */
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .control-row:last-child { margin-bottom: 0; }
+
+    .control-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      min-width: 56px;
+      letter-spacing: 0.02em;
+    }
+
+    .control-row input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .control-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--kombu);
+      cursor: pointer;
+      transition: transform var(--transition);
+    }
+
+    .control-row input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .control-row input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--kombu);
+      cursor: pointer;
+      border: none;
+    }
+
+    .control-value {
+      font-size: 0.72rem;
+      color: var(--kombu);
+      font-family: var(--mono);
+      font-weight: 500;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* Toggles */
+    .toggles-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-item label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .toggle {
+      position: relative;
+      width: 34px;
+      height: 18px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--border);
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background var(--transition);
+      outline: none;
+    }
+
+    .toggle::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left var(--transition);
+    }
+
+    .toggle:checked {
+      background: var(--kombu);
+    }
+
+    .toggle:checked::before {
+      left: 18px;
+    }
+
+    /* Stats */
+    .stats-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: none;
+    }
+
+    .stats-card.visible { display: block; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--kombu);
+      font-family: var(--mono);
+    }
+
+    .stat-lbl {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ========== Right Column (Output) ========== */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .output-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      min-height: 500px;
+    }
+
+    .output-bar {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+      flex-shrink: 0;
+    }
+
+    .output-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .output-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-family: var(--font);
+      font-size: 0.7rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.02em;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--moss);
+      color: var(--text);
+    }
+
+    .tool-btn.copied {
+      border-color: var(--kombu);
+      color: var(--kombu);
+    }
+
+    .tool-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    /* Font size */
+    .font-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-right: 4px;
+    }
+
+    .font-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+
+    .font-btn:hover {
+      border-color: var(--moss);
+      color: var(--text);
+    }
+
+    .font-label {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      min-width: 26px;
+      text-align: center;
+    }
+
+    /* Output body */
+    .output-body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+      position: relative;
+    }
+
+    .output-body::-webkit-scrollbar { width: 6px; height: 6px; }
+    .output-body::-webkit-scrollbar-track { background: var(--bg-input); }
+    .output-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .output-body::-webkit-scrollbar-thumb:hover { background: var(--moss); }
+
+    #asciiOutput {
+      font-family: var(--mono);
+      font-size: 5px;
+      line-height: 1.05;
+      white-space: pre;
+      color: var(--kombu);
+      letter-spacing: 0.3px;
+      font-weight: 400;
+    }
+
+    #asciiOutput.matrix-style {
+      color: #354024;
+    }
+
+    .placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .placeholder-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .placeholder-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--text-muted);
+    }
+
+    .placeholder p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .placeholder .sub {
+      font-size: 0.7rem;
+      margin-top: 4px;
+    }
+
+    /* ========== Responsive ========== */
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        gap: 16px;
+      }
+
+      .header { padding: 16px 20px; }
+
+      .output-panel { min-height: 400px; }
+
+      .style-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ========== Utility ========== */
+    .hidden { display: none !important; }
+    #hiddenCanvas { display: none; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <h1>ascii art studio</h1>
+      <span class="header-tag">v1.0</span>
+    </div>
+    <div class="header-right">
+      <span class="header-link">client-side · no upload</span>
+    </div>
+  </header>
+
+  <canvas id="hiddenCanvas"></canvas>
+
+  <main class="app">
+
+    <!-- ===== Left Column ===== -->
+    <div class="left-col">
+
+      <!-- Upload -->
+      <div>
+        <div class="section-label">Upload</div>
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="upload-text">
+            Drop image here or <span class="browse-link">browse</span>
+          </div>
+          <div class="upload-formats">png · jpg · webp · gif</div>
+          <input type="file" id="fileInput" accept="image/*">
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="preview-card" id="previewCard">
+        <div class="preview-header">
+          <span class="preview-title">Preview</span>
+          <span class="preview-info" id="imageInfo"></span>
+        </div>
+        <div class="preview-img-wrap">
+          <img id="previewImage" alt="Preview">
+        </div>
+      </div>
+
+      <!-- Style -->
+      <div class="controls-card">
+        <div class="section-label">Style</div>
+        <div class="style-grid">
+          <button class="style-btn active" data-style="classic">Classic</button>
+          <button class="style-btn" data-style="blocks">Blocks</button>
+          <button class="style-btn" data-style="braille">Braille</button>
+          <button class="style-btn" data-style="minimal">Minimal</button>
+          <button class="style-btn" data-style="emoji">Emoji</button>
+          <button class="style-btn" data-style="matrix">Matrix</button>
+        </div>
+
+        <div class="section-label">Adjust</div>
+
+        <div class="control-row">
+          <span class="control-label">Width</span>
+          <input type="range" id="widthSlider" min="40" max="200" value="100">
+          <span class="control-value" id="widthValue">100</span>
+        </div>
+
+        <div class="control-row">
+          <span class="control-label">Contrast</span>
+          <input type="range" id="contrastSlider" min="50" max="200" value="100">
+          <span class="control-value" id="contrastValue">1.0</span>
+        </div>
+
+        <div class="toggles-row">
+          <div class="toggle-item">
+            <input type="checkbox" id="invertToggle" class="toggle">
+            <label for="invertToggle">Invert</label>
+          </div>
+          <div class="toggle-item">
+            <input type="checkbox" id="colorToggle" class="toggle">
+            <label for="colorToggle">Color</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-card" id="statsCard">
+        <div class="stats-row">
+          <div class="stat">
+            <div class="stat-val" id="statChars">0</div>
+            <div class="stat-lbl">Chars</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="statLines">0</div>
+            <div class="stat-lbl">Lines</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="statWidth">0</div>
+            <div class="stat-lbl">Width</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="statStyle">—</div>
+            <div class="stat-lbl">Style</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== Right Column ===== -->
+    <div class="right-col">
+      <div class="output-panel">
+        <div class="output-bar">
+          <span class="output-title">Output</span>
+          <div class="output-tools">
+            <div class="font-controls">
+              <button class="font-btn" id="fontMinus">−</button>
+              <span class="font-label" id="fontSizeLabel">5px</span>
+              <button class="font-btn" id="fontPlus">+</button>
+            </div>
+            <button class="tool-btn" id="copyBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+            <button class="tool-btn" id="downloadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <div class="output-body">
+          <div class="placeholder" id="placeholder">
+            <div class="placeholder-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <p>Upload an image to begin</p>
+            <p class="sub">or paste from clipboard (Ctrl+V)</p>
+          </div>
+          <pre id="asciiOutput"></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ========== State ==========
+    const state = {
+      imageData: null,
+      imageWidth: 0,
+      imageHeight: 0,
+      style: 'classic',
+      outputWidth: 100,
+      contrast: 1.0,
+      invert: false,
+      color: false,
+      fontSize: 5,
+      currentAscii: '',
+    };
+
+    // ========== DOM ==========
+    const $ = (s) => document.querySelector(s);
+    const uploadZone = $('#uploadZone');
+    const fileInput = $('#fileInput');
+    const previewCard = $('#previewCard');
+    const previewImage = $('#previewImage');
+    const imageInfo = $('#imageInfo');
+    const statsCard = $('#statsCard');
+    const asciiOutput = $('#asciiOutput');
+    const placeholder = $('#placeholder');
+    const canvas = $('#hiddenCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    // ========== Character Maps ==========
+    const CHAR_MAPS = {
+      classic:  ' .:-=+*#%@'.split(''),
+      blocks:   ' ░▒▓█'.split(''),
+      minimal:  ' .#'.split(''),
+    };
+
+    // Matrix: half-width katakana + digits — pick by brightness
+    const MATRIX_CHARS = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789'.split('');
+
+    const EMOJI_BRIGHTNESS = ['⬛', '🟫', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '⬜'];
+
+    // ========== Image Loading ==========
+    function loadImage(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          previewImage.src = e.target.result;
+          previewCard.classList.add('visible');
+          imageInfo.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+
+          state.imageWidth = img.naturalWidth;
+          state.imageHeight = img.naturalHeight;
+
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+          state.imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          convertAndRender();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ========== Pixel Helpers ==========
+    function pixelBrightness(data, idx, contrast) {
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3] / 255;
+      let br = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      br = br * a + (1 - a);
+      br = (br - 0.5) * contrast + 0.5;
+      return Math.max(0, Math.min(1, br));
+    }
+
+    function pixelColor(data, idx) {
+      return { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+    }
+
+    // ========== Conversion ==========
+    function convertToAscii() {
+      if (!state.imageData) return '';
+
+      const { style, outputWidth, contrast, invert } = state;
+      const srcData = state.imageData.data;
+      const srcW = state.imageData.width;
+      const srcH = state.imageData.height;
+      const ratio = srcH / srcW;
+      const outH = Math.round(outputWidth * ratio * 0.5);
+
+      if (style === 'braille') return convertBraille(srcData, srcW, srcH, outputWidth, outH * 2, contrast, invert);
+      if (style === 'emoji')   return convertEmoji(srcData, srcW, srcH, outputWidth, outH, contrast, invert);
+      if (style === 'matrix')  return convertMatrix(srcData, srcW, srcH, outputWidth, outH, contrast, invert);
+
+      const charMap = CHAR_MAPS[style] || CHAR_MAPS.classic;
+      const lines = [];
+
+      for (let y = 0; y < outH; y++) {
+        let line = '';
+        for (let x = 0; x < outputWidth; x++) {
+          const sx = Math.floor(x * srcW / outputWidth);
+          const sy = Math.floor(y * srcH / outH);
+          const idx = (sy * srcW + sx) * 4;
+
+          let br = pixelBrightness(srcData, idx, contrast);
+          if (invert) br = 1 - br;
+
+          line += charMap[Math.floor(br * (charMap.length - 1))];
+        }
+        lines.push(line);
+      }
+      return lines.join('\n');
+    }
+
+    // ========== Matrix Conversion ==========
+    function convertMatrix(srcData, srcW, srcH, outW, outH, contrast, invertFlag) {
+      const lines = [];
+      // Use brightness to decide character density.
+      // Dark = dense katakana, bright = sparse/space
+      // Also vary which character by position-seeded randomness for consistency on re-renders
+      let seed = 42;
+      function pseudoRandom() {
+        seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      }
+
+      for (let y = 0; y < outH; y++) {
+        let line = '';
+        for (let x = 0; x < outW; x++) {
+          const sx = Math.floor(x * srcW / outW);
+          const sy = Math.floor(y * srcH / outH);
+          const idx = (sy * srcW + sx) * 4;
+
+          let br = pixelBrightness(srcData, idx, contrast);
+          if (invertFlag) br = 1 - br;
+
+          const rnd = pseudoRandom();
+
+          if (br > 0.92) {
+            // Very bright: space
+            line += ' ';
+          } else if (br > 0.75) {
+            // Light: sparse — only show char ~30% of the time
+            if (rnd < 0.3) {
+              line += MATRIX_CHARS[Math.floor(rnd * MATRIX_CHARS.length) % MATRIX_CHARS.length];
+            } else {
+              line += ' ';
+            }
+          } else if (br > 0.5) {
+            // Medium: show char ~60% of the time, use digits more
+            if (rnd < 0.6) {
+              // Prefer digits for medium brightness
+              const digitStart = MATRIX_CHARS.length - 10;
+              const ci = rnd < 0.3
+                ? Math.floor(pseudoRandom() * 10) + digitStart
+                : Math.floor(pseudoRandom() * MATRIX_CHARS.length);
+              line += MATRIX_CHARS[ci % MATRIX_CHARS.length];
+            } else {
+              line += ' ';
+            }
+          } else {
+            // Dark: always show a character — prefer katakana
+            const ci = Math.floor(pseudoRandom() * MATRIX_CHARS.length);
+            line += MATRIX_CHARS[ci];
+          }
+        }
+        lines.push(line);
+      }
+      return lines.join('\n');
+    }
+
+    // ========== Braille Conversion ==========
+    function convertBraille(srcData, srcW, srcH, outCols, outRows, contrast, invertFlag) {
+      const dotCols = outCols * 2;
+      const dotRows = outRows * 4;
+
+      function dotBr(dx, dy) {
+        const sx = Math.floor(dx * srcW / dotCols);
+        const sy = Math.floor(dy * srcH / dotRows);
+        const idx = (sy * srcW + sx) * 4;
+        let b = pixelBrightness(srcData, idx, contrast);
+        if (invertFlag) b = 1 - b;
+        return b;
+      }
+
+      const lines = [];
+      const bits = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80];
+      const dots = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[0,3],[1,3]];
+
+      for (let cr = 0; cr < outRows / 4; cr++) {
+        let line = '';
+        for (let cc = 0; cc < outCols; cc++) {
+          let code = 0x2800;
+          const bx = cc * 2, by = cr * 4;
+          for (let i = 0; i < 8; i++) {
+            if (dotBr(bx + dots[i][0], by + dots[i][1]) < 0.5) {
+              code |= bits[i];
+            }
+          }
+          line += String.fromCharCode(code);
+        }
+        lines.push(line);
+      }
+      return lines.join('\n');
+    }
+
+    // ========== Emoji Conversion ==========
+    function convertEmoji(srcData, srcW, srcH, outW, outH, contrast, invertFlag) {
+      const lines = [];
+      for (let y = 0; y < outH; y++) {
+        let line = '';
+        for (let x = 0; x < outW; x++) {
+          const sx = Math.floor(x * srcW / outW);
+          const sy = Math.floor(y * srcH / outH);
+          const idx = (sy * srcW + sx) * 4;
+          let br = pixelBrightness(srcData, idx, contrast);
+          if (invertFlag) br = 1 - br;
+          line += EMOJI_BRIGHTNESS[Math.floor(br * (EMOJI_BRIGHTNESS.length - 1))];
+        }
+        lines.push(line);
+      }
+      return lines.join('\n');
+    }
+
+    // ========== Color HTML ==========
+    function convertToColorHtml() {
+      if (!state.imageData) return '';
+
+      const { style, outputWidth, contrast, invert: inv } = state;
+      const srcData = state.imageData.data;
+      const srcW = state.imageData.width;
+      const srcH = state.imageData.height;
+      const outH = Math.round(outputWidth * (srcH / srcW) * 0.5);
+
+      const charMap = CHAR_MAPS[style] || CHAR_MAPS.classic;
+      const parts = [];
+
+      // Seed for matrix
+      let seed = 42;
+      function pseudoRandom() {
+        seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      }
+
+      for (let y = 0; y < outH; y++) {
+        for (let x = 0; x < outputWidth; x++) {
+          const sx = Math.floor(x * srcW / outputWidth);
+          const sy = Math.floor(y * srcH / outH);
+          const idx = (sy * srcW + sx) * 4;
+
+          let br = pixelBrightness(srcData, idx, contrast);
+          if (inv) br = 1 - br;
+
+          const c = pixelColor(srcData, idx);
+          let ch;
+
+          if (style === 'matrix') {
+            const rnd = pseudoRandom();
+            if (br > 0.92) {
+              ch = ' ';
+            } else if (br > 0.75) {
+              ch = rnd < 0.3 ? MATRIX_CHARS[Math.floor(rnd * MATRIX_CHARS.length) % MATRIX_CHARS.length] : ' ';
+            } else if (br > 0.5) {
+              if (rnd < 0.6) {
+                const ci = Math.floor(pseudoRandom() * MATRIX_CHARS.length);
+                ch = MATRIX_CHARS[ci % MATRIX_CHARS.length];
+              } else {
+                ch = ' ';
+              }
+            } else {
+              ch = MATRIX_CHARS[Math.floor(pseudoRandom() * MATRIX_CHARS.length)];
+            }
+          } else {
+            ch = charMap[Math.floor(br * (charMap.length - 1))];
+          }
+
+          if (ch === '<') ch = '&lt;';
+          else if (ch === '>') ch = '&gt;';
+          else if (ch === '&') ch = '&amp;';
+
+          if (ch === ' ') {
+            parts.push(' ');
+          } else {
+            parts.push(`<span style="color:rgb(${c.r},${c.g},${c.b})">${ch}</span>`);
+          }
+        }
+        parts.push('\n');
+      }
+      return parts.join('');
+    }
+
+    // ========== Render ==========
+    function convertAndRender() {
+      if (!state.imageData) return;
+      placeholder.style.display = 'none';
+
+      asciiOutput.classList.toggle('matrix-style', state.style === 'matrix');
+
+      if (state.color && state.style !== 'emoji' && state.style !== 'braille') {
+        asciiOutput.innerHTML = convertToColorHtml();
+        state.currentAscii = convertToAscii();
+      } else {
+        const ascii = convertToAscii();
+        state.currentAscii = ascii;
+        asciiOutput.textContent = ascii;
+      }
+
+      const lines = state.currentAscii.split('\n');
+      $('#statChars').textContent = state.currentAscii.length.toLocaleString();
+      $('#statLines').textContent = lines.length;
+      $('#statWidth').textContent = state.outputWidth;
+      $('#statStyle').textContent = state.style.charAt(0).toUpperCase() + state.style.slice(1);
+      statsCard.classList.add('visible');
+    }
+
+    // ========== Debounce ==========
+    function debounce(fn, ms) {
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+    const debouncedConvert = debounce(convertAndRender, 80);
+
+    // ========== Events ==========
+
+    // Upload
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+
+    // Drag & Drop
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+    });
+    document.body.addEventListener('dragover', (e) => e.preventDefault());
+    document.body.addEventListener('drop', (e) => e.preventDefault());
+
+    // Style buttons
+    document.querySelectorAll('.style-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.style = btn.dataset.style;
+        debouncedConvert();
+      });
+    });
+
+    // Width
+    const widthSlider = $('#widthSlider');
+    widthSlider.addEventListener('input', () => {
+      state.outputWidth = parseInt(widthSlider.value);
+      $('#widthValue').textContent = widthSlider.value;
+      debouncedConvert();
+    });
+
+    // Contrast
+    const contrastSlider = $('#contrastSlider');
+    contrastSlider.addEventListener('input', () => {
+      state.contrast = parseInt(contrastSlider.value) / 100;
+      $('#contrastValue').textContent = state.contrast.toFixed(1);
+      debouncedConvert();
+    });
+
+    // Toggles
+    $('#invertToggle').addEventListener('change', (e) => { state.invert = e.target.checked; debouncedConvert(); });
+    $('#colorToggle').addEventListener('change', (e) => { state.color = e.target.checked; debouncedConvert(); });
+
+    // Font size
+    $('#fontPlus').addEventListener('click', () => {
+      state.fontSize = Math.min(20, state.fontSize + 1);
+      asciiOutput.style.fontSize = state.fontSize + 'px';
+      $('#fontSizeLabel').textContent = state.fontSize + 'px';
+    });
+    $('#fontMinus').addEventListener('click', () => {
+      state.fontSize = Math.max(2, state.fontSize - 1);
+      asciiOutput.style.fontSize = state.fontSize + 'px';
+      $('#fontSizeLabel').textContent = state.fontSize + 'px';
+    });
+
+    // Copy
+    const copyBtn = $('#copyBtn');
+    copyBtn.addEventListener('click', async () => {
+      if (!state.currentAscii) return;
+      try {
+        await navigator.clipboard.writeText(state.currentAscii);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = state.currentAscii;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = copyBtn.querySelector('svg').outerHTML + ' Copied';
+      copyBtn.classList.add('copied');
+      setTimeout(() => { copyBtn.innerHTML = original; copyBtn.classList.remove('copied'); }, 2000);
+    });
+
+    // Download
+    $('#downloadBtn').addEventListener('click', () => {
+      if (!state.currentAscii) return;
+      const blob = new Blob([state.currentAscii], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ascii-${state.style}-${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Paste
+    document.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) loadImage(file);
+          break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
