@@ -10,6 +10,8 @@ A browser-based tool that converts images into ASCII art. Upload an image, pick 
 - **Drag & drop / paste support** — drop an image file or paste one from the clipboard
 - **Adjustable font size** — zoom the rendered output in or out
 - **Copy & download** — copy ASCII text to clipboard or download it as a `.txt` file
+- **Dark mode** — toggle in the header, follows your system preference by default, choice remembered between visits
+- **Responsive layout** — usable from small phones up to wide desktop screens
 
 ## Usage
 

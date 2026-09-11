@@ -2,7 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    /* Set the theme before first paint so there's no light/dark flash. */
+    (function () {
+      try {
+        var saved = localStorage.getItem('ascii-studio-theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F5F0E8">
+  <meta name="description" content="Convert images into ASCII, Matrix, Braille, or Emoji art entirely in your browser — no upload, no backend.">
   <title>ASCII Art Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,6 +58,49 @@
 
       --grid-color: rgba(53, 64, 36, 0.06);
       --grid-size:  24px;
+
+      --upload-hover-bg: #FAFAF5;
+      --theme-transition: 0.35s ease;
+    }
+
+    /* ========== Dark theme ==========
+      Same brand palette, re-tuned for a dark surface so every
+      var(--kombu) / var(--moss) / var(--text-*) reference below
+      repaints automatically — no component rules need to change.
+    ================================ */
+    [data-theme="dark"] {
+      --cafe:       #D9C79E;
+      --kombu:      #9FC97C;
+      --moss:       #8FA870;
+      --tan:        #DCC9A6;
+      --bone:       #E9DDCB;
+
+      --bg:         #1A1C16;
+      --bg-card:    #23261D;
+      --bg-input:   #1F2219;
+      --border:     #3A3D30;
+      --border-light:#2C2F25;
+
+      --text:       #E9DDCB;
+      --text-secondary: #B7B49B;
+      --text-muted: #83816D;
+
+      --accent:     #9FC97C;
+      --accent-hover:#C3DBA3;
+
+      --grid-color: rgba(233, 221, 203, 0.035);
+      --upload-hover-bg: #262A1E;
+    }
+
+    /* Respect reduced-motion preferences: shrink, don't disable, so
+       state changes are still perceivable. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
     }
 
     /* ========== Reset ========== */
@@ -63,9 +121,9 @@
 
     /* ========== Header ========== */
     .header {
-      padding: 24px 40px;
+      padding: clamp(16px, 2.5vw, 24px) clamp(16px, 4vw, 40px);
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
       background: var(--bg);
@@ -114,10 +172,10 @@
     .app {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 32px 40px;
+      padding: clamp(16px, 3vw, 32px) clamp(16px, 4vw, 40px);
       display: grid;
       grid-template-columns: 340px 1fr;
-      gap: 32px;
+      gap: clamp(16px, 2.5vw, 32px);
       min-height: calc(100vh - 73px);
     }
 
@@ -151,7 +209,7 @@
 
     .upload-zone:hover {
       border-color: var(--moss);
-      background: #FAFAF5;
+      background: var(--upload-hover-bg);
     }
 
     .upload-zone.drag-over {
@@ -256,38 +314,77 @@
       padding: 20px;
     }
 
-    /* Style selector */
-    .style-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 20px;
+    /* Hook Sidebar (Animated Style Selector) */
+    .hook-sidebar {
+      display: flex;
+      position: relative;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    .style-btn {
-      padding: 8px 4px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--bg);
-      color: var(--text-secondary);
-      font-family: var(--font);
-      font-size: 0.72rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all var(--transition);
-      text-align: center;
-      letter-spacing: 0.02em;
+    .hook-rail {
+      position: relative;
+      width: 2px;
+      background: var(--border-light);
+      border-radius: 2px;
+      margin: 4px 0;
     }
 
-    .style-btn:hover {
-      border-color: var(--moss);
-      color: var(--text);
+    .hook-active-indicator, .hook-hover-indicator {
+      position: absolute;
+      top: 0;
+      left: -1px;
+      width: 4px;
+      border-radius: 4px;
+      transition: transform 0.4s cubic-bezier(0.2, 1, 0.2, 1), height 0.4s cubic-bezier(0.2, 1, 0.2, 1);
     }
 
-    .style-btn.active {
+    .hook-active-indicator {
       background: var(--kombu);
-      border-color: var(--kombu);
-      color: #fff;
+      z-index: 2;
+    }
+
+    .hook-hover-indicator {
+      background: var(--moss);
+      opacity: 0;
+      z-index: 1;
+      transition: transform 0.4s cubic-bezier(0.2, 1, 0.2, 1), height 0.4s cubic-bezier(0.2, 1, 0.2, 1), opacity 0.2s ease;
+    }
+
+    .hook-sidebar:hover .hook-hover-indicator {
+      opacity: 0.3;
+    }
+
+    .hook-items {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 2px;
+    }
+
+    .hook-item {
+      padding: 8px 12px;
+      text-align: left;
+      background: transparent;
+      border: none;
+      font-family: var(--font);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+      position: relative;
+    }
+
+    .hook-item:hover {
+      color: var(--text);
+      background: var(--bg-input);
+    }
+
+    .hook-item.active {
+      color: var(--kombu);
+      font-weight: 600;
     }
 
     /* Sliders */
@@ -555,6 +652,8 @@
     .output-body {
       flex: 1;
       overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding: 20px;
       position: relative;
     }
@@ -575,7 +674,7 @@
     }
 
     #asciiOutput.matrix-style {
-      color: #354024;
+      color: var(--kombu);
     }
 
     .placeholder {
@@ -614,6 +713,83 @@
       margin-top: 4px;
     }
 
+    /* ========== Theme toggle ========== */
+    .theme-toggle {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color var(--theme-transition), border-color var(--theme-transition),
+                  color var(--theme-transition), transform 0.2s ease;
+    }
+
+    .theme-toggle:hover { border-color: var(--moss); color: var(--text); transform: scale(1.08); }
+    .theme-toggle:active { transform: scale(0.92); }
+
+    .theme-toggle svg {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2, 1, 0.2, 1);
+    }
+
+    .icon-sun { opacity: 1; transform: rotate(0deg) scale(1); }
+    .icon-moon { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+    [data-theme="dark"] .icon-sun { opacity: 0; transform: rotate(90deg) scale(0.5); }
+    [data-theme="dark"] .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+
+    /* Smooth, theme-wide repaint when switching light/dark.
+       Scoped to surfaces only, so it never fights the existing
+       fast hover/press transitions on interactive controls. */
+    body,
+    .header,
+    .preview-card,
+    .controls-card,
+    .stats-card,
+    .output-panel,
+    .output-bar,
+    .preview-header,
+    .preview-img-wrap {
+      transition: background-color var(--theme-transition), color var(--theme-transition),
+                  border-color var(--theme-transition);
+    }
+
+    /* ========== Entrance animation ========== */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .preview-card.visible,
+    .stats-card.visible {
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    #asciiOutput {
+      opacity: 0;
+      transition: opacity 0.3s ease, background-color var(--theme-transition),
+                  color var(--theme-transition), border-color var(--theme-transition);
+    }
+
+    #asciiOutput.rendered { opacity: 1; }
+
+    /* ========== Keyboard focus ========== */
+    button:focus-visible,
+    .theme-toggle:focus-visible,
+    .toggle:focus-visible,
+    .control-row input[type="range"]:focus-visible {
+      outline: 2px solid var(--kombu);
+      outline-offset: 2px;
+    }
+
     /* ========== Responsive ========== */
     @media (max-width: 860px) {
       .app {
@@ -625,9 +801,35 @@
       .header { padding: 16px 20px; }
 
       .output-panel { min-height: 400px; }
-
-      .style-grid { grid-template-columns: 1fr 1fr; }
     }
+
+    @media (max-width: 480px) {
+      .app { padding: 12px; gap: 12px; }
+      .header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+      .upload-zone { padding: 32px 16px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); row-gap: 10px; }
+      .output-panel { min-height: 320px; }
+      .output-bar { flex-wrap: wrap; gap: 10px; }
+    }
+
+    /* Bump touch targets on coarse-pointer (touch) devices without
+       changing the mouse/trackpad-tuned sizing above. */
+    @media (pointer: coarse) {
+      .font-btn { width: 32px; height: 32px; }
+      .tool-btn { padding: 8px 14px; }
+      .theme-toggle { width: 36px; height: 36px; }
+      .toggle { width: 40px; height: 22px; }
+      .toggle::before { width: 18px; height: 18px; }
+      .toggle:checked::before { left: 20px; }
+      .control-row input[type="range"]::-webkit-slider-thumb,
+      .control-row input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; }
+    }
+
+    /* Prevent the wide monospace output from ever forcing the whole
+       page to scroll horizontally — the scroll stays contained
+       inside .output-body on any viewport. */
+    .right-col, .output-panel { min-width: 0; }
+    html, body { overflow-x: hidden; }
 
     /* ========== Utility ========== */
     .hidden { display: none !important; }
@@ -643,6 +845,15 @@
     </div>
     <div class="header-right">
       <span class="header-link">client-side · no upload</span>
+      <button id="themeToggle" class="theme-toggle" type="button" title="Toggle dark mode" aria-label="Switch to dark mode" aria-pressed="false">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -686,13 +897,20 @@
       <!-- Style -->
       <div class="controls-card">
         <div class="section-label">Style</div>
-        <div class="style-grid">
-          <button class="style-btn active" data-style="classic">Classic</button>
-          <button class="style-btn" data-style="blocks">Blocks</button>
-          <button class="style-btn" data-style="braille">Braille</button>
-          <button class="style-btn" data-style="minimal">Minimal</button>
-          <button class="style-btn" data-style="emoji">Emoji</button>
-          <button class="style-btn" data-style="matrix">Matrix</button>
+        
+        <div class="hook-sidebar">
+          <div class="hook-rail">
+            <div class="hook-active-indicator" id="hookActive"></div>
+            <div class="hook-hover-indicator" id="hookHover"></div>
+          </div>
+          <div class="hook-items">
+            <button class="hook-item active" data-style="classic">Classic</button>
+            <button class="hook-item" data-style="blocks">Blocks</button>
+            <button class="hook-item" data-style="braille">Braille</button>
+            <button class="hook-item" data-style="minimal">Minimal</button>
+            <button class="hook-item" data-style="emoji">Emoji</button>
+            <button class="hook-item" data-style="matrix">Matrix</button>
+          </div>
         </div>
 
         <div class="section-label">Adjust</div>
@@ -876,7 +1094,7 @@
       const ratio = srcH / srcW;
       const outH = Math.round(outputWidth * ratio * 0.5);
 
-      if (style === 'braille') return convertBraille(srcData, srcW, srcH, outputWidth, outH * 2, contrast, invert);
+      if (style === 'braille') return convertBraille(srcData, srcW, srcH, outputWidth, outH, contrast, invert);
       if (style === 'emoji')   return convertEmoji(srcData, srcW, srcH, outputWidth, outH, contrast, invert);
       if (style === 'matrix')  return convertMatrix(srcData, srcW, srcH, outputWidth, outH, contrast, invert);
 
@@ -975,7 +1193,7 @@
       const bits = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80];
       const dots = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[0,3],[1,3]];
 
-      for (let cr = 0; cr < outRows / 4; cr++) {
+      for (let cr = 0; cr < outRows; cr++) {
         let line = '';
         for (let cc = 0; cc < outCols; cc++) {
           let code = 0x2800;
@@ -1081,6 +1299,7 @@
     function convertAndRender() {
       if (!state.imageData) return;
       placeholder.style.display = 'none';
+      asciiOutput.classList.add('rendered');
 
       asciiOutput.classList.toggle('matrix-style', state.style === 'matrix');
 
@@ -1125,12 +1344,38 @@
     document.body.addEventListener('dragover', (e) => e.preventDefault());
     document.body.addEventListener('drop', (e) => e.preventDefault());
 
-    // Style buttons
-    document.querySelectorAll('.style-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.style = btn.dataset.style;
+    // Style Hook Sidebar
+    const hookItems = document.querySelectorAll('.hook-item');
+    const hookActive = $('#hookActive');
+    const hookHover = $('#hookHover');
+
+    function updateHookIndicator(element, indicator) {
+      if (!element || !indicator) return;
+      // Get relative position to parent container
+      const parent = element.closest('.hook-items');
+      const itemTop = element.offsetTop;
+      const itemHeight = element.offsetHeight;
+      indicator.style.transform = `translateY(${itemTop}px)`;
+      indicator.style.height = `${itemHeight}px`;
+    }
+
+    // Init hook indicator safely after DOM is rendered
+    setTimeout(() => {
+      const activeItem = document.querySelector('.hook-item.active');
+      updateHookIndicator(activeItem, hookActive);
+    }, 50);
+
+    hookItems.forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        updateHookIndicator(item, hookHover);
+      });
+      
+      item.addEventListener('click', () => {
+        hookItems.forEach(b => b.classList.remove('active'));
+        item.classList.add('active');
+        updateHookIndicator(item, hookActive);
+        
+        state.style = item.dataset.style;
         debouncedConvert();
       });
     });
@@ -1212,6 +1457,44 @@
         }
       }
     });
+
+    // ========== Theme ==========
+    (function initTheme() {
+      const THEME_KEY = 'ascii-studio-theme';
+      const root = document.documentElement;
+      const toggle = $('#themeToggle');
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+      function safeGet(key) {
+        try { return localStorage.getItem(key); } catch { return null; }
+      }
+      function safeSet(key, val) {
+        try { localStorage.setItem(key, val); } catch { /* storage unavailable (e.g. private mode) — theme just won't persist */ }
+      }
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#1A1C16' : '#F5F0E8');
+        toggle.setAttribute('aria-pressed', String(theme === 'dark'));
+        toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+      }
+
+      // The inline head script already set the correct attribute before
+      // paint — just sync the button/meta state to match it.
+      applyTheme(root.getAttribute('data-theme') || 'light');
+
+      toggle.addEventListener('click', () => {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        safeSet(THEME_KEY, next);
+      });
+
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+          if (!safeGet(THEME_KEY)) applyTheme(e.matches ? 'dark' : 'light');
+        });
+      }
+    })();
   </script>
 </body>
 </html>
